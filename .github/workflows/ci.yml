@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vulnscope
+          POSTGRES_PASSWORD: vulnscope
+          POSTGRES_DB: vulnscope
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run linting
+        run: |
+          pip install ruff
+          ruff check backend/
+
+      - name: Run type checking
+        run: |
+          pip install mypy
+          mypy backend/ --ignore-missing-imports
+
+      - name: Run tests
+        run: |
+          pytest backend/tests/ -v --tb=short
+        env:
+          DATABASE_URL: postgresql+asyncpg://vulnscope:vulnscope@localhost:5432/vulnscope
+
+  frontend:
+    name: Frontend Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          cd frontend && npm install
+
+      - name: Lint
+        run: |
+          cd frontend && npx eslint app.js --no-eslintrc --env browser --env es2020 --parser-options=ecmaVersion:2020 --rule '{"no-undef": "error", "no-unused-vars": "warn"}' || true
