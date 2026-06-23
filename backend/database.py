@@ -1,5 +1,6 @@
 """Database configuration and session management."""
 
+import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Column, String, Float, DateTime, Boolean, Text, JSON
@@ -8,9 +9,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-DATABASE_URL = "postgresql+asyncpg://vulnscope:vulnscope@localhost:5432/vulnscope"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./vulnscope.db")
 
-engine = create_async_engine(DATABASE_URL, echo=False, pool_size=20)
+engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

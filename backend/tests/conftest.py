@@ -1,13 +1,19 @@
 import pytest
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-@pytest.fixture
-def app():
-    from main import app
-    app.config['TESTING'] = True
-    return app
+from httpx import AsyncClient, ASGITransport
+from main import app
+
 
 @pytest.fixture
-def client(app):
-    return app.test_client()
+def anyio_backend():
+    return "asyncio"
+
+
+@pytest.fixture
+async def client():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac

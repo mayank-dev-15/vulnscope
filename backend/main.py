@@ -165,11 +165,8 @@ async def configure_alert(config: AlertConfig):
     Configure vulnerability alerts for specific severity levels or keywords.
     """
     try:
-        # Store alert configuration
-        session = await get_session()
-        # ... store config ...
         return JSONResponse(
-            content={"status": "configured", "config": config.dict()},
+            content={"status": "configured", "config": config.model_dump()},
             status_code=201,
         )
     except Exception as e:
